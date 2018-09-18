@@ -160,7 +160,6 @@ class S5SlideShow
      */
     function transform_section_slides($content)
     {
-        wfProfileIn(__METHOD__);
         $p = $this->getParser();
         $content = $p->preprocess($content, $this->sTitle, $this->parserOptions);
         $p->setOutputType(Parser::OT_WIKI);
@@ -239,7 +238,6 @@ class S5SlideShow
         $frame = $p->getPreprocessor()->newFrame();
         $text = $frame->expand($node, PPFrame::RECOVER_ORIG);
         $text = $frame->parser->mStripState->unstripBoth($text);
-        wfProfileOut(__METHOD__);
         return $text;
     }
 
