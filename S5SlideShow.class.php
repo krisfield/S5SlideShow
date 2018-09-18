@@ -31,7 +31,7 @@ if (!defined('MEDIAWIKI'))
 
 class S5SlideShow
 {
-    var $sTitle, $sArticle, $pageContent;
+    var $sTitle, $sWikiPage, $pageContent;
 
     var $slideParser, $parserOptions;
     static $slideno = 0;
@@ -49,12 +49,12 @@ class S5SlideShow
             wfDebug(__CLASS__.": Error! Pass a title object, NOT a title string!\n");
             return false;
         }
-        $this->sArticle = new Article($sTitle);
+        $this->sWikiPage = new WikiPage($sTitle);
         $this->sTitle = $sTitle;
         if ($sContent)
             $this->pageContent = $sContent;
         else
-            $this->pageContent = $this->sArticle->getContent();
+            $this->pageContent = $this->sWikiPage->getContent();
         $this->attr = array();
         if (is_array($attr))
             $this->setAttributes($attr);
@@ -90,7 +90,7 @@ class S5SlideShow
         // Default author = first revision's author
         if (!isset($attr['author']))
         {
-            $rev = $this->sArticle->getOldestRevision();
+            $rev = $this->sWikiPage->getOldestRevision();
             if ($rev)
             {
                 $attr['author'] = User::newFromId($rev->getUser())->getRealName();
@@ -107,13 +107,13 @@ class S5SlideShow
             $attr['subfooter'] = $attr['author'];
             if ($attr['subfooter'])
                 $attr['subfooter'] .= ', ';
-            $attr['subfooter'] .= $wgContLang->timeanddate($this->sArticle->getTimestamp(), true);
+            $attr['subfooter'] .= $wgContLang->timeanddate($this->sWikiPage->getTimestamp(), true);
         }
         else
         {
             $attr['subfooter'] = str_ireplace(
                 '{{date}}',
-                $wgContLang->timeanddate($this->sArticle->getTimestamp(), true),
+                $wgContLang->timeanddate($this->sWikiPage->getTimestamp(), true),
                 $attr['subfooter']
             );
         }
@@ -362,7 +362,7 @@ class S5SlideShow
         $replace['[addscript]'] = '';
         $replace['[style]'] = $this->attr['style'];
         $replace['[styleurl]'] = 'index.php?action=slide&s5skin='.$this->attr['style'].'&s5css=1';
-        $replace['[pageid]'] = $this->sArticle->getID();
+        $replace['[pageid]'] = $this->sWikiPage->getID();
         $replace['[scaled]'] = $this->attr['scaled'] ? 'true' : 'false';
         $replace['[defaultView]'] = 'slideshow';
 
@@ -459,7 +459,7 @@ class S5SlideShow
             $title = Title::newFromText("S5/$skin/$k", NS_MEDIAWIKI);
             if ($title->exists())
             {
-                $a = new Article($title);
+                $a = new WikiPage($title);
                 $c = $a->getContent();
             }
             else
@@ -528,7 +528,7 @@ class S5SlideShow
         $attr['content'] = $content;
         $slideShow = new S5SlideShow($parser->mTitle, NULL, $attr);
         $content = '';
-        $article = new Article($parser->mTitle);
+        $WikiPage = new WikiPage($parser->mTitle);
         foreach (array('title', 'subtitle', 'author', 'footer', 'subfooter') as $key)
         {
             if (isset($slideShow->attr[$key]) && $slideShow->attr[$key] != '')
@@ -538,7 +538,7 @@ class S5SlideShow
                 {
                     $value = str_ireplace(
                         '{{date}}',
-                        $wgContLang->timeanddate($article->getTimestamp(), true),
+                        $wgContLang->timeanddate($WikiPage->getTimestamp(), true),
                         $value
                     );
                 }
@@ -680,7 +680,7 @@ class S5SlideShow
 }
 
 // Used to display CSS files instead of non-existing special articles (MediaWiki:S5/<skin>/<stylesheet>)
-class S5SkinArticle extends Article
+class S5SkinWikiPage extends WikiPage
 {
     var $s5skin, $s5file;
     // Create the object and remember s5skin and s5file
@@ -701,7 +701,7 @@ class S5SkinArticle extends Article
         return $this->mContent;
     }
     // Show default content from the file
-    public function showMissingArticle()
+    public function showMissingWikiPage()
     {
         global $wgOut, $wgRequest, $wgParser;
         // Copy-paste from includes/Article.php:
@@ -717,15 +717,15 @@ class S5SkinArticle extends Article
         if ($oldid)
         {
             $text = wfMessage(
-                'missing-article', $this->mTitle->getPrefixedText(),
-                wfMessage('missingarticle-rev', $oldid)->plain()
+                'missing-WikiPage', $this->mTitle->getPrefixedText(),
+                wfMessage('missingWikiPage-rev', $oldid)->plain()
             )->plain();
         }
         else
             $text = $this->getContent();
         if ($wgParser->mTagHooks['source'])
             $text = "<source lang='css'>\n$text\n</source>";
-        $text = "<div class='noarticletext'>\n$text\n</div>";
+        $text = "<div class='noWikiPagetext'>\n$text\n</div>";
         $wgOut->addWikiText($text);
     }
 }

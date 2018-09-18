@@ -74,10 +74,10 @@ $egS5Scaled = false;
 $wgExtensionMessagesFiles['S5SlideShow'] = $dir.'/S5SlideShow.i18n.php';
 $wgHooks['UnknownAction'][] = 'S5SlideShowHooks::UnknownAction';
 $wgAutoloadClasses['S5SlideShow'] = $dir.'/S5SlideShow.class.php';
-$wgAutoloadClasses['S5SkinArticle'] = $dir.'/S5SlideShow.class.php';
+$wgAutoloadClasses['S5SkinWikiPage'] = $dir.'/S5SlideShow.class.php';
 $wgExtensionFunctions[] = 'S5SlideShowHooks::Setup';
 $wgHooks['ParserFirstCallInit'][] = 'S5SlideShowHooks::ParserFirstCallInit';
-$wgHooks['ArticleFromTitle'][] = 'S5SlideShowHooks::ArticleFromTitle';
+$wgHooks['WikiPageFromTitle'][] = 'S5SlideShowHooks::WikiPageFromTitle';
 $wgHooks['AlternateEdit'][] = 'S5SlideShowHooks::AlternateEdit';
 $wgHooks['MagicWordwgVariableIDs'][] = 'S5SlideShowHooks::MagicWordwgVariableIDs';
 $wgHooks['ParserGetVariableValueSwitch'][] = 'S5SlideShowHooks::ParserGetVariableValueSwitch';
@@ -195,7 +195,7 @@ class S5SlideShowHooks
     }
 
     // Hook for ?action=slide
-    static function UnknownAction($action, $article)
+    static function UnknownAction($action, $WikiPage)
     {
         global $wgMaxRedirects, $wgRequest;
         if ($action == 'slide')
@@ -218,13 +218,13 @@ class S5SlideShowHooks
                 return false;
             }
             // Check if the article is readable
-            $title = $article->getTitle();
+            $title = $WikiPage->getTitle();
             for ($r = 0; $r < $wgMaxRedirects && $title->isRedirect(); $r++)
             {
                 if (!$title->userCan('read'))
                     return true;
-                $title = $article->followRedirect();
-                $article = new Article($title);
+                $title = $WikiPage->followRedirect();
+                $WikiPage = new WikiPage($title);
             }
             // Hack for CustIS live preview
             // TODO remove support for loading text from session object and
@@ -246,7 +246,7 @@ class S5SlideShowHooks
     }
 
     // Used to display CSS files on S5 skin CSS pages when they don't exist
-    static function ArticleFromTitle($title, &$article)
+    static function WikiPageFromTitle($title, &$WikiPage)
     {
         if ($title->getNamespace() == NS_MEDIAWIKI &&
             preg_match('#^S5/([\w-]+)/((core|base|framing|pretty).css)$#s', $title->getText(), $m))
@@ -254,7 +254,7 @@ class S5SlideShowHooks
             $file = dirname(__FILE__).'/'.str_replace('$skin', $m[1], self::$styles[$m[2]]);
             if (file_exists($file))
             {
-                $article = new S5SkinArticle($title, $m[1], $file);
+                $WikiPage = new S5SkinWikiPage($title, $m[1], $file);
                 return false;
             }
         }
@@ -264,9 +264,9 @@ class S5SlideShowHooks
     // Used to display CSS files on S5 skin CSS pages in edit mode
     static function AlternateEdit($editpage)
     {
-        if ($editpage->mArticle instanceof S5SkinArticle &&
-            !$editpage->mArticle->exists())
-            $editpage->mPreloadText = $editpage->mArticle->getContent();
+        if ($editpage->mWikiPage instanceof S5SkinWikiPage &&
+            !$editpage->mWikiPage->exists())
+            $editpage->mPreloadText = $editpage->mWikiPage->getContent();
         return true;
     }
 }
